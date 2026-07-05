@@ -27,9 +27,5 @@ fun List<TaskEntity>.toTaskTree(): List<TaskNode> {
 }
 
 fun List<TaskNode>.flattenVisible(): List<TaskNode> = flatMap { node ->
-    if (node.task.expanded) {
-        listOf(node) + node.children.flattenVisible()
-    } else {
-        listOf(node)
-    }
+    if (node.task.expanded) listOf(node) + node.children.flattenVisible() else listOf(node)
 }

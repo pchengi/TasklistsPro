@@ -8,6 +8,7 @@ import com.pchengi.tasklistspro.data.TaskEntity
 import com.pchengi.tasklistspro.model.TaskNode
 import com.pchengi.tasklistspro.model.toTaskTree
 import com.pchengi.tasklistspro.repository.TaskRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -21,8 +22,18 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         .map(List<TaskEntity>::toTaskTree)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val _focusTaskId = MutableStateFlow<Long?>(null)
+    val focusTaskId: StateFlow<Long?> = _focusTaskId
+
     fun addTask(parentId: Long? = null) {
-        viewModelScope.launch { repository.addTask(parentId) }
+        viewModelScope.launch {
+            val id = repository.addTask(parentId)
+            _focusTaskId.value = id
+        }
+    }
+
+    fun clearFocusRequest(id: Long) {
+        if (_focusTaskId.value == id) _focusTaskId.value = null
     }
 
     fun updateTitle(id: Long, title: String) {
@@ -43,5 +54,21 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteTask(id: Long) {
         viewModelScope.launch { repository.deleteTask(id) }
+    }
+
+    fun moveUp(id: Long) {
+        viewModelScope.launch { repository.moveUp(id) }
+    }
+
+    fun moveDown(id: Long) {
+        viewModelScope.launch { repository.moveDown(id) }
+    }
+
+    fun indentUnder(id: Long, parentId: Long?) {
+        viewModelScope.launch { repository.indentUnder(id, parentId) }
+    }
+
+    fun outdent(id: Long) {
+        viewModelScope.launch { repository.outdent(id) }
     }
 }

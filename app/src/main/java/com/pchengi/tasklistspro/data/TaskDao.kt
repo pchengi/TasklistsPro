@@ -16,7 +16,12 @@ interface TaskDao {
     @Query("SELECT * FROM tasks ORDER BY parentId IS NOT NULL, parentId, sortOrder, id")
     suspend fun getAllTasks(): List<TaskEntity>
 
-    @Query("SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM tasks WHERE parentId IS :parentId")
+    @Query(
+        """
+        SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM tasks
+        WHERE (:parentId IS NULL AND parentId IS NULL) OR parentId = :parentId
+        """
+    )
     suspend fun nextSortOrder(parentId: Long?): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

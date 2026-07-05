@@ -1,4 +1,3 @@
 <resources>
-    <style name="Theme.TasklistsPro" parent="android:style/Theme.Material.NoActionBar">
-    </style>
+    <style name="Theme.TasklistsPro" parent="android:style/Theme.Material.NoActionBar" />
 </resources>
