@@ -20,7 +20,7 @@ fun TaskDragHandle(
 ) {
     Box(
         modifier = modifier
-            .size(32.dp)
+            .size(28.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
@@ -29,7 +29,7 @@ fun TaskDragHandle(
             imageVector = Icons.Rounded.DragHandle,
             contentDescription = "Drag handle",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(18.dp)
         )
     }
 }
