@@ -4,7 +4,7 @@ import com.pchengi.tasklistspro.data.TaskDao
 import com.pchengi.tasklistspro.data.TaskEntity
 import kotlinx.coroutines.flow.Flow
 
-private const val MAX_DEPTH = 2
+private const val MAX_SUBTASK_DEPTH = 3
 
 class TaskRepository(private val dao: TaskDao) {
     val tasks: Flow<List<TaskEntity>> = dao.observeTasks()
@@ -12,7 +12,7 @@ class TaskRepository(private val dao: TaskDao) {
     suspend fun addTask(parentId: Long? = null, title: String = ""): Long {
         val all = dao.getAllTasks()
         val depth = depthOf(parentId, all)
-        require(depth <= MAX_DEPTH) { "Maximum subtask depth is 3 levels." }
+        require(depth <= MAX_SUBTASK_DEPTH) { "Maximum subtask depth is 3 levels." }
         return dao.insert(
             TaskEntity(
                 parentId = parentId,
