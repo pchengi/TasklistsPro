@@ -60,11 +60,7 @@ fun InlineTaskTitle(
         }
     }
 
-    Box(
-        modifier = modifier.pointerInput(onLongPress) {
-            detectTapGestures(onLongPress = { onLongPress() })
-        }
-    ) {
+    Box(modifier = modifier) {
         BasicTextField(
             value = fieldValue,
             onValueChange = { newValue ->
@@ -76,7 +72,13 @@ fun InlineTaskTitle(
             singleLine = true,
             textStyle = style,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier.focusRequester(focusRequester),
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .pointerInput(onLongPress) {
+                    detectTapGestures(
+                        onLongPress = { onLongPress() }
+                    )
+                },
             decorationBox = { innerTextField ->
                 if (fieldValue.text.isBlank()) {
                     Text(

@@ -139,7 +139,7 @@ private fun TaskRowContents(
         verticalAlignment = Alignment.CenterVertically
     ) {
         TaskDragHandle(
-            modifier = Modifier.padding(start = 2.dp, end = 4.dp)
+            modifier = Modifier.padding(start = 2.dp, end = 3.dp)
         )
 
         Checkbox(
@@ -148,21 +148,10 @@ private fun TaskRowContents(
             modifier = Modifier.size(36.dp)
         )
 
-        FilledTonalIconButton(
-            onClick = { viewModel.addTask(task.id) },
-            modifier = Modifier.size(30.dp)
-        ) {
-            Icon(
-                Icons.Rounded.Add,
-                contentDescription = "Add subtask",
-                modifier = Modifier.size(18.dp)
-            )
-        }
-
         Row(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 6.dp),
+                .padding(start = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             InlineTaskTitle(
@@ -178,12 +167,12 @@ private fun TaskRowContents(
             if (hasChildren) {
                 IconButton(
                     onClick = { viewModel.toggleExpanded(task.id) },
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(26.dp)
                 ) {
                     Icon(
                         imageVector = if (task.expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                         contentDescription = if (task.expanded) "Collapse" else "Expand",
-                        modifier = Modifier.size(21.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
@@ -196,9 +185,20 @@ private fun TaskRowContents(
                     )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+
+            FilledTonalIconButton(
+                onClick = { viewModel.addTask(task.id) },
+                modifier = Modifier.size(30.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = "Add subtask",
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }
 
