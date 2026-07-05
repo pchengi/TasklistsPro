@@ -27,10 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +50,6 @@ fun TaskRow(
     modifier: Modifier = Modifier
 ) {
     val task = node.task
-    val hasChildren = node.children.isNotEmpty()
     val descendantCount = node.descendantCount()
     val uncheckedDescendantCount = node.uncheckedDescendantCount()
     var confirmDelete by remember(task.id) { mutableStateOf(false) }
@@ -96,9 +94,7 @@ fun TaskRow(
         TaskRowContents(
             node = node,
             focusedTaskId = focusedTaskId,
-            hasChildren = hasChildren,
             uncheckedDescendantCount = uncheckedDescendantCount,
-            previousVisibleNode = previousVisibleNode,
             viewModel = viewModel
         )
     }
@@ -120,12 +116,11 @@ fun TaskRow(
 private fun TaskRowContents(
     node: TaskNode,
     focusedTaskId: Long?,
-    hasChildren: Boolean,
     uncheckedDescendantCount: Int,
-    previousVisibleNode: TaskNode?,
     viewModel: TaskViewModel
 ) {
     val task = node.task
+    val hasChildren = node.children.isNotEmpty()
     val textStyle = MaterialTheme.typography.bodyLarge.copy(
         color = MaterialTheme.colorScheme.onSurface,
         fontWeight = if (task.bold) FontWeight.Bold else FontWeight.Normal
@@ -143,52 +138,15 @@ private fun TaskRowContents(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        TaskDragHandle(
+            modifier = Modifier.padding(start = 2.dp, end = 4.dp)
+        )
+
         Checkbox(
             checked = task.completed,
             onCheckedChange = { checked -> viewModel.toggleCompleted(task.id, checked) },
             modifier = Modifier.size(36.dp)
         )
-
-        if (hasChildren) {
-            IconButton(
-                onClick = { viewModel.toggleExpanded(task.id) },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(
-                    imageVector = if (task.expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                    contentDescription = if (task.expanded) "Collapse" else "Expand",
-                    modifier = Modifier.size(21.dp)
-                )
-            }
-        } else {
-            Spacer(modifier = Modifier.width(28.dp))
-        }
-
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 2.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            InlineTaskTitle(
-                title = task.title,
-                style = textStyle,
-                requestFocus = focusedTaskId == task.id,
-                onTitleChange = { viewModel.updateTitle(task.id, it) },
-                onLongPress = { viewModel.toggleBold(task.id) },
-                onFocusHandled = { viewModel.clearFocusRequest(task.id) },
-                modifier = Modifier.weight(1f)
-            )
-
-            if (uncheckedDescendantCount > 0) {
-                Text(
-                    text = " ($uncheckedDescendantCount)",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(start = 2.dp)
-                )
-            }
-        }
 
         FilledTonalIconButton(
             onClick = { viewModel.addTask(task.id) },
@@ -201,9 +159,46 @@ private fun TaskRowContents(
             )
         }
 
-        TaskDragHandle(
-            modifier = Modifier.padding(start = 4.dp)
-        )
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            InlineTaskTitle(
+                title = task.title,
+                style = textStyle,
+                requestFocus = focusedTaskId == task.id,
+                onTitleChange = { viewModel.updateTitle(task.id, it) },
+                onLongPress = { viewModel.toggleBold(task.id) },
+                onFocusHandled = { viewModel.clearFocusRequest(task.id) },
+                modifier = Modifier.weight(1f, fill = false)
+            )
+
+            if (hasChildren) {
+                IconButton(
+                    onClick = { viewModel.toggleExpanded(task.id) },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = if (task.expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = if (task.expanded) "Collapse" else "Expand",
+                        modifier = Modifier.size(21.dp)
+                    )
+                }
+
+                if (uncheckedDescendantCount > 0) {
+                    Text(
+                        text = "($uncheckedDescendantCount)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(start = 1.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
     }
 }
 
