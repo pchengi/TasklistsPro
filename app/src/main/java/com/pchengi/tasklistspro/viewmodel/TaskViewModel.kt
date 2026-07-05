@@ -44,20 +44,4 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteTask(id: Long) {
         viewModelScope.launch { repository.deleteTask(id) }
     }
-
-    fun moveUp(id: Long) {
-        viewModelScope.launch { repository.moveUp(id) }
-    }
-
-    fun moveDown(id: Long) {
-        viewModelScope.launch { repository.moveDown(id) }
-    }
-
-    fun indentUnder(id: Long, parentId: Long?) {
-        viewModelScope.launch { repository.indentUnder(id, parentId) }
-    }
-
-    fun outdent(id: Long) {
-        viewModelScope.launch { repository.outdent(id) }
-    }
 }
