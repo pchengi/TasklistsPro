@@ -22,38 +22,42 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun addTask(parentId: Long? = null) {
-        viewModelScope.launch {
-            repository.addTask(parentId)
-        }
+        viewModelScope.launch { repository.addTask(parentId) }
     }
 
     fun updateTitle(id: Long, title: String) {
-        viewModelScope.launch {
-            repository.updateTitle(id, title)
-        }
+        viewModelScope.launch { repository.updateTitle(id, title) }
     }
 
     fun toggleCompleted(id: Long, completed: Boolean) {
-        viewModelScope.launch {
-            repository.setCompleted(id, completed)
-        }
+        viewModelScope.launch { repository.setCompleted(id, completed) }
     }
 
     fun toggleBold(id: Long) {
-        viewModelScope.launch {
-            repository.toggleBold(id)
-        }
+        viewModelScope.launch { repository.toggleBold(id) }
     }
 
     fun toggleExpanded(id: Long) {
-        viewModelScope.launch {
-            repository.toggleExpanded(id)
-        }
+        viewModelScope.launch { repository.toggleExpanded(id) }
     }
 
     fun deleteTask(id: Long) {
-        viewModelScope.launch {
-            repository.deleteTask(id)
-        }
+        viewModelScope.launch { repository.deleteTask(id) }
+    }
+
+    fun moveUp(id: Long) {
+        viewModelScope.launch { repository.moveUp(id) }
+    }
+
+    fun moveDown(id: Long) {
+        viewModelScope.launch { repository.moveDown(id) }
+    }
+
+    fun indentUnder(id: Long, parentId: Long?) {
+        viewModelScope.launch { repository.indentUnder(id, parentId) }
+    }
+
+    fun outdent(id: Long) {
+        viewModelScope.launch { repository.outdent(id) }
     }
 }
