@@ -1,7 +1,6 @@
 package com.pchengi.tasklistspro.ui
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
@@ -16,12 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InlineTaskTitle(
     title: String,
@@ -54,16 +53,18 @@ fun InlineTaskTitle(
 
     LaunchedEffect(requestFocus) {
         if (requestFocus) {
-            fieldValue = fieldValue.copy(
-                selection = TextRange(fieldValue.text.length)
-            )
+            fieldValue = fieldValue.copy(selection = TextRange(fieldValue.text.length))
             focusRequester.requestFocus()
             keyboardController?.show()
             onFocusHandled()
         }
     }
 
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier.pointerInput(onLongPress) {
+            detectTapGestures(onLongPress = { onLongPress() })
+        }
+    ) {
         BasicTextField(
             value = fieldValue,
             onValueChange = { newValue ->
@@ -75,12 +76,7 @@ fun InlineTaskTitle(
             singleLine = true,
             textStyle = style,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = onLongPress
-                ),
+            modifier = Modifier.focusRequester(focusRequester),
             decorationBox = { innerTextField ->
                 if (fieldValue.text.isBlank()) {
                     Text(
