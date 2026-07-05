@@ -44,13 +44,6 @@ fun TaskRow(
             .padding(start = (node.depth * 28).dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TaskDragHandle(
-            onMoveUp = { viewModel.moveUp(task.id) },
-            onMoveDown = { viewModel.moveDown(task.id) },
-            onIndent = { viewModel.indentUnder(task.id, previousVisibleNode?.task?.id) },
-            onOutdent = { viewModel.outdent(task.id) }
-        )
-
         Checkbox(
             checked = task.completed,
             onCheckedChange = { checked -> viewModel.toggleCompleted(task.id, checked) }
@@ -74,7 +67,9 @@ fun TaskRow(
             onTitleChange = { viewModel.updateTitle(task.id, it) },
             onLongPress = { viewModel.toggleBold(task.id) },
             onFocusHandled = { viewModel.clearFocusRequest(task.id) },
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp)
         )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -85,5 +80,9 @@ fun TaskRow(
                 Icon(Icons.Rounded.Add, contentDescription = "Add subtask")
             }
         }
+
+        TaskDragHandle(
+            modifier = Modifier.padding(start = 8.dp)
+        )
     }
 }
