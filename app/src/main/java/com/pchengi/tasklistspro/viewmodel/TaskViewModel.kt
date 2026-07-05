@@ -18,12 +18,12 @@ import kotlinx.coroutines.launch
 class TaskViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = TaskRepository(TaskDatabase.get(application).taskDao())
 
+    private val _focusTaskId = MutableStateFlow<Long?>(null)
+    val focusTaskId: StateFlow<Long?> = _focusTaskId
+
     val taskTree: StateFlow<List<TaskNode>> = repository.tasks
         .map(List<TaskEntity>::toTaskTree)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    private val _focusTaskId = MutableStateFlow<Long?>(null)
-    val focusTaskId: StateFlow<Long?> = _focusTaskId
 
     fun addTask(parentId: Long? = null) {
         viewModelScope.launch {
@@ -33,7 +33,9 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearFocusRequest(id: Long) {
-        if (_focusTaskId.value == id) _focusTaskId.value = null
+        if (_focusTaskId.value == id) {
+            _focusTaskId.value = null
+        }
     }
 
     fun updateTitle(id: Long, title: String) {

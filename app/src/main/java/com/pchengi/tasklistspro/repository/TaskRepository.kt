@@ -4,15 +4,15 @@ import com.pchengi.tasklistspro.data.TaskDao
 import com.pchengi.tasklistspro.data.TaskEntity
 import kotlinx.coroutines.flow.Flow
 
-private const val MAX_DEPTH = 3
+private const val MAX_SUBTASK_DEPTH = 3
 
 class TaskRepository(private val dao: TaskDao) {
     val tasks: Flow<List<TaskEntity>> = dao.observeTasks()
 
     suspend fun addTask(parentId: Long? = null, title: String = ""): Long {
         val all = dao.getAllTasks()
-        val newDepth = newDepth(parentId, all)
-        require(newDepth <= MAX_DEPTH) { "Maximum subtask depth is 3 levels." }
+        val parentDepth = depthOf(parentId, all)
+        require(parentDepth <= MAX_SUBTASK_DEPTH) { "Maximum subtask depth is 3 levels." }
         return dao.insert(
             TaskEntity(
                 parentId = parentId,
@@ -41,10 +41,14 @@ class TaskRepository(private val dao: TaskDao) {
         val all = dao.getAllTasks()
         val target = all.firstOrNull { it.id == id } ?: return
         val descendants = descendantsOf(id, all)
-        val changed = mutableListOf(target.copy(completed = completed, updatedAt = System.currentTimeMillis()))
+        val now = System.currentTimeMillis()
+
+        val changed = mutableListOf<TaskEntity>()
+        changed += target.copy(completed = completed, updatedAt = now)
         if (completed) {
-            changed += descendants.map { it.copy(completed = true, updatedAt = System.currentTimeMillis()) }
+            changed += descendants.map { it.copy(completed = true, updatedAt = now) }
         }
+
         dao.updateAll(changed)
         syncAncestors(target.parentId)
     }
@@ -58,34 +62,55 @@ class TaskRepository(private val dao: TaskDao) {
     suspend fun moveUp(id: Long) {
         val all = dao.getAllTasks()
         val task = all.firstOrNull { it.id == id } ?: return
-        val siblings = siblingsOf(task, all)
+        val siblings = siblingsOf(task.parentId, all)
         val index = siblings.indexOfFirst { it.id == id }
         if (index <= 0) return
-        swapSortOrders(task, siblings[index - 1])
+
+        val previous = siblings[index - 1]
+        val now = System.currentTimeMillis()
+        dao.updateAll(
+            listOf(
+                task.copy(sortOrder = previous.sortOrder, updatedAt = now),
+                previous.copy(sortOrder = task.sortOrder, updatedAt = now)
+            )
+        )
     }
 
     suspend fun moveDown(id: Long) {
         val all = dao.getAllTasks()
         val task = all.firstOrNull { it.id == id } ?: return
-        val siblings = siblingsOf(task, all)
+        val siblings = siblingsOf(task.parentId, all)
         val index = siblings.indexOfFirst { it.id == id }
         if (index < 0 || index >= siblings.lastIndex) return
-        swapSortOrders(task, siblings[index + 1])
+
+        val next = siblings[index + 1]
+        val now = System.currentTimeMillis()
+        dao.updateAll(
+            listOf(
+                task.copy(sortOrder = next.sortOrder, updatedAt = now),
+                next.copy(sortOrder = task.sortOrder, updatedAt = now)
+            )
+        )
     }
 
     suspend fun indentUnder(id: Long, newParentId: Long?) {
         if (newParentId == null) return
+
         val all = dao.getAllTasks()
         val task = all.firstOrNull { it.id == id } ?: return
         if (task.id == newParentId) return
         if (descendantsOf(task.id, all).any { it.id == newParentId }) return
-        val targetDepth = newDepth(newParentId, all)
-        if (targetDepth + subtreeHeightOffset(task.id, all) > MAX_DEPTH) return
+
+        val parentDepth = depthOf(newParentId, all)
+        val movedSubtreeHeight = subtreeHeight(task.id, all)
+        if (parentDepth + movedSubtreeHeight > MAX_SUBTASK_DEPTH) return
+
+        val now = System.currentTimeMillis()
         dao.update(
             task.copy(
                 parentId = newParentId,
                 sortOrder = dao.nextSortOrder(newParentId),
-                updatedAt = System.currentTimeMillis()
+                updatedAt = now
             )
         )
     }
@@ -94,21 +119,13 @@ class TaskRepository(private val dao: TaskDao) {
         val all = dao.getAllTasks()
         val task = all.firstOrNull { it.id == id } ?: return
         val parent = all.firstOrNull { it.id == task.parentId } ?: return
+
+        val now = System.currentTimeMillis()
         dao.update(
             task.copy(
                 parentId = parent.parentId,
                 sortOrder = dao.nextSortOrder(parent.parentId),
-                updatedAt = System.currentTimeMillis()
-            )
-        )
-    }
-
-    private suspend fun swapSortOrders(first: TaskEntity, second: TaskEntity) {
-        val now = System.currentTimeMillis()
-        dao.updateAll(
-            listOf(
-                first.copy(sortOrder = second.sortOrder, updatedAt = now),
-                second.copy(sortOrder = first.sortOrder, updatedAt = now)
+                updatedAt = now
             )
         )
     }
@@ -120,15 +137,21 @@ class TaskRepository(private val dao: TaskDao) {
             val parent = all.firstOrNull { it.id == parentId } ?: return
             val children = all.filter { it.parentId == parentId }
             val shouldBeComplete = children.isNotEmpty() && children.all { it.completed }
+
             if (parent.completed != shouldBeComplete) {
-                dao.update(parent.copy(completed = shouldBeComplete, updatedAt = System.currentTimeMillis()))
+                dao.update(
+                    parent.copy(
+                        completed = shouldBeComplete,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
             }
             parentId = parent.parentId
         }
     }
 
-    private fun siblingsOf(task: TaskEntity, all: List<TaskEntity>): List<TaskEntity> =
-        all.filter { it.parentId == task.parentId }
+    private fun siblingsOf(parentId: Long?, all: List<TaskEntity>): List<TaskEntity> =
+        all.filter { it.parentId == parentId }
             .sortedWith(compareBy<TaskEntity> { it.sortOrder }.thenBy { it.id })
 
     private fun descendantsOf(id: Long, all: List<TaskEntity>): List<TaskEntity> {
@@ -136,7 +159,7 @@ class TaskRepository(private val dao: TaskDao) {
         return children + children.flatMap { descendantsOf(it.id, all) }
     }
 
-    private fun newDepth(parentId: Long?, all: List<TaskEntity>): Int {
+    private fun depthOf(parentId: Long?, all: List<TaskEntity>): Int {
         var depth = 0
         var current = parentId
         while (current != null) {
@@ -146,9 +169,9 @@ class TaskRepository(private val dao: TaskDao) {
         return depth
     }
 
-    private fun subtreeHeightOffset(id: Long, all: List<TaskEntity>): Int {
+    private fun subtreeHeight(id: Long, all: List<TaskEntity>): Int {
         val children = all.filter { it.parentId == id }
-        if (children.isEmpty()) return 0
-        return 1 + children.maxOf { subtreeHeightOffset(it.id, all) }
+        if (children.isEmpty()) return 1
+        return 1 + children.maxOf { subtreeHeight(it.id, all) }
     }
 }
