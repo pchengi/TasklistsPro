@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
@@ -166,21 +165,20 @@ private fun TaskRowContents(
                 style = textStyle,
                 requestFocus = focusedTaskId == task.id,
                 onTitleChange = { viewModel.updateTitle(task.id, it) },
-                onLongPress = { viewModel.toggleBold(task.id) },
+                onDoubleTap = { viewModel.toggleBold(task.id) },
                 onFocusHandled = { viewModel.clearFocusRequest(task.id) },
                 modifier = Modifier.weight(1f, fill = false)
             )
 
             if (hasChildren) {
-                Spacer(modifier = Modifier.width(16.dp))
                 IconButton(
                     onClick = { viewModel.toggleExpanded(task.id) },
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
                         imageVector = if (task.expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                         contentDescription = if (task.expanded) "Collapse" else "Expand",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
 

@@ -1,5 +1,6 @@
 package com.pchengi.tasklistspro.ui
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
@@ -14,15 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
-import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun InlineTaskTitle(
@@ -30,13 +27,12 @@ fun InlineTaskTitle(
     style: TextStyle,
     requestFocus: Boolean,
     onTitleChange: (String) -> Unit,
-    onLongPress: () -> Unit,
+    onDoubleTap: () -> Unit,
     onFocusHandled: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val viewConfiguration = LocalViewConfiguration.current
     var fieldValue by remember {
         mutableStateOf(
             TextFieldValue(
@@ -65,32 +61,10 @@ fun InlineTaskTitle(
     }
 
     Box(
-        modifier = modifier.pointerInput(onLongPress) {
-            awaitPointerEventScope {
-                while (true) {
-                    val down = awaitPointerEvent(PointerEventPass.Initial)
-                        .changes
-                        .firstOrNull { it.pressed }
-                    if (down != null) {
-                        val releasedBeforeLongPress = withTimeoutOrNull(
-                            viewConfiguration.longPressTimeoutMillis
-                        ) {
-                            var released = false
-                            while (!released) {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                released = event.changes.any { it.id == down.id && it.changedToUp() }
-                            }
-                            true
-                        }
-                        if (releasedBeforeLongPress == null) {
-                            onLongPress()
-                            do {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                            } while (event.changes.any { it.id == down.id && it.pressed })
-                        }
-                    }
-                }
-            }
+        modifier = modifier.pointerInput(onDoubleTap) {
+            detectTapGestures(
+                onDoubleTap = { onDoubleTap() }
+            )
         }
     ) {
         BasicTextField(
