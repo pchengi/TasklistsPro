@@ -92,7 +92,9 @@ fun TaskRow(
         ) {
             LeadingControls(
                 checked = task.completed,
-                onCheckedChange = { checked -> viewModel.toggleCompleted(task.id, checked) }
+                onCheckedChange = { checked -> viewModel.toggleCompleted(task.id, checked) },
+                onMoveUp = { viewModel.moveUp(task.id) },
+                onMoveDown = { viewModel.moveDown(task.id) }
             )
 
             TitleCluster(
