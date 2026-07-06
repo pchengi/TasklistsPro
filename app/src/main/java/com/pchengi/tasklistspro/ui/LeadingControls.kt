@@ -14,12 +14,16 @@ fun LeadingControls(
     onCheckedChange: (Boolean) -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    onIndent: () -> Unit,
+    onOutdent: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
         TaskDragHandle(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
+            onIndent = onIndent,
+            onOutdent = onOutdent,
             modifier = Modifier.padding(start = 2.dp, end = 3.dp)
         )
 
