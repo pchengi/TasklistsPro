@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,14 +43,18 @@ fun TaskRow(
     val uncheckedDescendantCount = node.uncheckedDescendantCount()
     val viewConfiguration = LocalViewConfiguration.current
     var showAddButton by remember(task.id) { mutableStateOf(false) }
+    var showDeleteConfirmation by remember(task.id) { mutableStateOf(false) }
 
     val revealAdd = { showAddButton = true }
 
     SwipeDeleteContainer(
-        title = task.title,
-        descendantCount = descendantCount,
-        requireConfirmation = hasChildren,
-        onDelete = { viewModel.deleteTask(task.id) },
+        onDeleteRequested = {
+            if (hasChildren) {
+                showDeleteConfirmation = true
+            } else {
+                viewModel.deleteTask(task.id)
+            }
+        },
         modifier = modifier
     ) {
         Row(
@@ -119,6 +126,35 @@ fun TaskRow(
                 onAddSubtask = { viewModel.addTask(task.id) }
             )
         }
+    }
+
+    if (showDeleteConfirmation) {
+        val affectedDescendants = descendantCount.coerceAtLeast(1)
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Delete task?") },
+            text = {
+                Text(
+                    "Delete this task and $affectedDescendants subtask" +
+                        if (affectedDescendants == 1) "?" else "s?"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        viewModel.deleteTask(task.id)
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
