@@ -29,25 +29,25 @@ import androidx.compose.ui.unit.dp
 fun SwipeDeleteContainer(
     title: String,
     descendantCount: Int,
+    requireConfirmation: Boolean,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    var confirmDelete by remember(title, descendantCount) { mutableStateOf(false) }
+    var confirmDelete by remember(title, descendantCount, requireConfirmation) {
+        mutableStateOf(false)
+    }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.StartToEnd) {
-                if (descendantCount > 0) {
+                if (requireConfirmation) {
                     confirmDelete = true
-                    false
                 } else {
                     onDelete()
-                    true
                 }
-            } else {
-                false
             }
+            false
         }
     )
 
@@ -75,14 +75,14 @@ fun SwipeDeleteContainer(
     )
 
     if (confirmDelete) {
+        val affectedDescendants = descendantCount.coerceAtLeast(1)
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Delete task?") },
             text = {
                 Text(
-                    "Delete \"${title.ifBlank { "Untitled task" }}\"? " +
-                        "This will also delete $descendantCount subtask" +
-                        if (descendantCount == 1) "." else "s."
+                    "This task has $affectedDescendants subtask" +
+                        if (affectedDescendants == 1) "." else "s."
                 )
             },
             confirmButton = {
