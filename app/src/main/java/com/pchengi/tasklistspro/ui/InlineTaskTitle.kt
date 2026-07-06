@@ -1,7 +1,7 @@
 package com.pchengi.tasklistspro.ui
 
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -29,7 +30,8 @@ fun InlineTaskTitle(
     onTitleChange: (String) -> Unit,
     onDoubleTap: () -> Unit,
     onFocusHandled: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable () -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -60,12 +62,11 @@ fun InlineTaskTitle(
         }
     }
 
-    Box(
+    Row(
         modifier = modifier.pointerInput(onDoubleTap) {
-            detectTapGestures(
-                onDoubleTap = { onDoubleTap() }
-            )
-        }
+            detectTapGestures(onDoubleTap = { onDoubleTap() })
+        },
+        verticalAlignment = Alignment.CenterVertically
     ) {
         BasicTextField(
             value = fieldValue,
@@ -78,7 +79,9 @@ fun InlineTaskTitle(
             singleLine = true,
             textStyle = style,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier.focusRequester(focusRequester),
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .weight(1f, fill = false),
             decorationBox = { innerTextField ->
                 if (fieldValue.text.isBlank()) {
                     Text(
@@ -89,5 +92,7 @@ fun InlineTaskTitle(
                 innerTextField()
             }
         )
+
+        trailingContent()
     }
 }
