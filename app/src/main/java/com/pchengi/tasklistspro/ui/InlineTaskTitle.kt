@@ -28,6 +28,7 @@ fun InlineTaskTitle(
     style: TextStyle,
     requestFocus: Boolean,
     onTitleChange: (String) -> Unit,
+    onTap: () -> Unit,
     onDoubleTap: () -> Unit,
     onFocusHandled: () -> Unit,
     modifier: Modifier = Modifier,
@@ -63,8 +64,11 @@ fun InlineTaskTitle(
     }
 
     Row(
-        modifier = modifier.pointerInput(onDoubleTap) {
-            detectTapGestures(onDoubleTap = { onDoubleTap() })
+        modifier = modifier.pointerInput(onTap, onDoubleTap) {
+            detectTapGestures(
+                onTap = { onTap() },
+                onDoubleTap = { onDoubleTap() }
+            )
         },
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -79,9 +83,7 @@ fun InlineTaskTitle(
             singleLine = true,
             textStyle = style,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .weight(1f, fill = false),
+            modifier = Modifier.focusRequester(focusRequester),
             decorationBox = { innerTextField ->
                 if (fieldValue.text.isBlank()) {
                     Text(

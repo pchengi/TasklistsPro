@@ -2,7 +2,6 @@ package com.pchengi.tasklistspro.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pchengi.tasklistspro.model.TaskNode
@@ -56,6 +55,8 @@ fun TaskRow(
     val uncheckedDescendantCount = node.uncheckedDescendantCount()
     var confirmDelete by remember(task.id) { mutableStateOf(false) }
     var showAddButton by remember(task.id) { mutableStateOf(false) }
+
+    val revealAdd = { showAddButton = true }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -99,7 +100,7 @@ fun TaskRow(
             focusedTaskId = focusedTaskId,
             uncheckedDescendantCount = uncheckedDescendantCount,
             showAddButton = showAddButton,
-            onRevealAdd = { showAddButton = true },
+            onRevealAdd = revealAdd,
             viewModel = viewModel
         )
     }
@@ -156,40 +157,48 @@ private fun TaskRowContents(
             modifier = Modifier.size(36.dp)
         )
 
-        InlineTaskTitle(
-            title = task.title,
-            style = textStyle,
-            requestFocus = focusedTaskId == task.id,
-            onTitleChange = { viewModel.updateTitle(task.id, it) },
-            onDoubleTap = { viewModel.toggleBold(task.id) },
-            onFocusHandled = { viewModel.clearFocusRequest(task.id) },
+        Row(
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 2.dp),
-            trailingContent = {
-                if (hasChildren) {
-                    IconButton(
-                        onClick = { viewModel.toggleExpanded(task.id) },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (task.expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                            contentDescription = if (task.expanded) "Collapse" else "Expand",
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            InlineTaskTitle(
+                title = task.title,
+                style = textStyle,
+                requestFocus = focusedTaskId == task.id,
+                onTitleChange = { viewModel.updateTitle(task.id, it) },
+                onTap = onRevealAdd,
+                onDoubleTap = { viewModel.toggleBold(task.id) },
+                onFocusHandled = { viewModel.clearFocusRequest(task.id) },
+                modifier = Modifier,
+                trailingContent = {
+                    if (hasChildren) {
+                        IconButton(
+                            onClick = { viewModel.toggleExpanded(task.id) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (task.expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                contentDescription = if (task.expanded) "Collapse" else "Expand",
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
 
-                    if (uncheckedDescendantCount > 0) {
-                        Text(
-                            text = "($uncheckedDescendantCount)",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.padding(start = 1.dp)
-                        )
+                        if (uncheckedDescendantCount > 0) {
+                            Text(
+                                text = "($uncheckedDescendantCount)",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.padding(start = 1.dp)
+                            )
+                        }
                     }
                 }
-            }
-        )
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+        }
 
         if (showAddButton) {
             FilledTonalIconButton(
