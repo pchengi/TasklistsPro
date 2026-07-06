@@ -1,7 +1,7 @@
 package com.pchengi.tasklistspro.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -22,14 +22,18 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 
 private const val DRAG_STEP_PX = 42f
+private const val INDENT_STEP_PX = 56f
 
 @Composable
 fun TaskDragHandle(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    onIndent: () -> Unit,
+    onOutdent: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var dragOffset by remember { mutableFloatStateOf(0f) }
+    var verticalOffset by remember { mutableFloatStateOf(0f) }
+    var horizontalOffset by remember { mutableFloatStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
 
     Box(
@@ -43,31 +47,47 @@ fun TaskDragHandle(
                     MaterialTheme.colorScheme.surfaceVariant
                 }
             )
-            .pointerInput(onMoveUp, onMoveDown) {
-                detectVerticalDragGestures(
+            .pointerInput(onMoveUp, onMoveDown, onIndent, onOutdent) {
+                detectDragGestures(
                     onDragStart = {
                         isDragging = true
-                        dragOffset = 0f
+                        verticalOffset = 0f
+                        horizontalOffset = 0f
                     },
                     onDragEnd = {
                         isDragging = false
-                        dragOffset = 0f
+                        verticalOffset = 0f
+                        horizontalOffset = 0f
                     },
                     onDragCancel = {
                         isDragging = false
-                        dragOffset = 0f
+                        verticalOffset = 0f
+                        horizontalOffset = 0f
                     },
-                    onVerticalDrag = { change, dragAmount ->
+                    onDrag = { change, dragAmount ->
                         change.consume()
-                        dragOffset += dragAmount
+                        verticalOffset += dragAmount.y
+                        horizontalOffset += dragAmount.x
+
                         when {
-                            dragOffset <= -DRAG_STEP_PX -> {
+                            verticalOffset <= -DRAG_STEP_PX -> {
                                 onMoveUp()
-                                dragOffset = 0f
+                                verticalOffset = 0f
                             }
-                            dragOffset >= DRAG_STEP_PX -> {
+                            verticalOffset >= DRAG_STEP_PX -> {
                                 onMoveDown()
-                                dragOffset = 0f
+                                verticalOffset = 0f
+                            }
+                        }
+
+                        when {
+                            horizontalOffset >= INDENT_STEP_PX -> {
+                                onIndent()
+                                horizontalOffset = 0f
+                            }
+                            horizontalOffset <= -INDENT_STEP_PX -> {
+                                onOutdent()
+                                horizontalOffset = 0f
                             }
                         }
                     }
