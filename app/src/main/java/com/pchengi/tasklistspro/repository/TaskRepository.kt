@@ -101,6 +101,7 @@ class TaskRepository(private val dao: TaskDao) {
         if (task.id == newParentId) return
         if (descendantsOf(task.id, all).any { it.id == newParentId }) return
 
+        val oldParentId = task.parentId
         val parentDepth = depthOf(newParentId, all)
         val movedSubtreeHeight = subtreeHeight(task.id, all)
         if (parentDepth + movedSubtreeHeight > MAX_SUBTASK_DEPTH) return
@@ -113,6 +114,9 @@ class TaskRepository(private val dao: TaskDao) {
                 updatedAt = now
             )
         )
+
+        syncAncestors(oldParentId)
+        syncAncestors(newParentId)
     }
 
     suspend fun outdent(id: Long) {
@@ -120,6 +124,7 @@ class TaskRepository(private val dao: TaskDao) {
         val task = all.firstOrNull { it.id == id } ?: return
         val parent = all.firstOrNull { it.id == task.parentId } ?: return
 
+        val oldParentId = task.parentId
         val now = System.currentTimeMillis()
         dao.update(
             task.copy(
@@ -128,6 +133,9 @@ class TaskRepository(private val dao: TaskDao) {
                 updatedAt = now
             )
         )
+
+        syncAncestors(oldParentId)
+        syncAncestors(parent.parentId)
     }
 
     private suspend fun syncAncestors(startParentId: Long?) {

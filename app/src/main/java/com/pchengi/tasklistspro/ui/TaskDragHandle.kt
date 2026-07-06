@@ -21,8 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 
-private const val DRAG_STEP_PX = 42f
-private const val INDENT_STEP_PX = 56f
+private const val VERTICAL_DRAG_STEP_PX = 42f
+private const val HORIZONTAL_DRAG_STEP_PX = 56f
 
 @Composable
 fun TaskDragHandle(
@@ -70,22 +70,22 @@ fun TaskDragHandle(
                         horizontalOffset += dragAmount.x
 
                         when {
-                            verticalOffset <= -DRAG_STEP_PX -> {
+                            verticalOffset <= -VERTICAL_DRAG_STEP_PX -> {
                                 onMoveUp()
                                 verticalOffset = 0f
                             }
-                            verticalOffset >= DRAG_STEP_PX -> {
+                            verticalOffset >= VERTICAL_DRAG_STEP_PX -> {
                                 onMoveDown()
                                 verticalOffset = 0f
                             }
                         }
 
                         when {
-                            horizontalOffset >= INDENT_STEP_PX -> {
+                            horizontalOffset >= HORIZONTAL_DRAG_STEP_PX -> {
                                 onIndent()
                                 horizontalOffset = 0f
                             }
-                            horizontalOffset <= -INDENT_STEP_PX -> {
+                            horizontalOffset <= -HORIZONTAL_DRAG_STEP_PX -> {
                                 onOutdent()
                                 horizontalOffset = 0f
                             }
