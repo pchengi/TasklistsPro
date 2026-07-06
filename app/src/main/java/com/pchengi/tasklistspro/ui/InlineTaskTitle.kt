@@ -11,11 +11,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
@@ -32,7 +36,10 @@ fun InlineTaskTitle(
     modifier: Modifier = Modifier,
     trailingContent: @Composable () -> Unit = {}
 ) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     var isEditing by remember { mutableStateOf(false) }
+    var pendingFocusRequest by remember { mutableStateOf(false) }
     var fieldValue by remember(title) {
         mutableStateOf(
             TextFieldValue(
@@ -58,6 +65,7 @@ fun InlineTaskTitle(
                 selection = TextRange(title.length)
             )
             isEditing = true
+            pendingFocusRequest = true
             onFocusHandled()
         }
     }
@@ -78,11 +86,13 @@ fun InlineTaskTitle(
                 singleLine = true,
                 textStyle = style,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier.onFocusChanged { focusState ->
-                    if (!focusState.isFocused) {
-                        isEditing = false
-                    }
-                },
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            isEditing = false
+                        }
+                    },
                 decorationBox = { innerTextField ->
                     if (fieldValue.text.isBlank()) {
                         Text(
@@ -110,6 +120,7 @@ fun InlineTaskTitle(
                                 selection = TextRange(title.length)
                             )
                             isEditing = true
+                            pendingFocusRequest = true
                         },
                         onDoubleTap = {
                             onDoubleTap()
@@ -120,5 +131,16 @@ fun InlineTaskTitle(
         }
 
         trailingContent()
+    }
+
+    LaunchedEffect(isEditing, pendingFocusRequest) {
+        if (isEditing && pendingFocusRequest) {
+            withFrameNanos { }
+            runCatching {
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            }
+            pendingFocusRequest = false
+        }
     }
 }
