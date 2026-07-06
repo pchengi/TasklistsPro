@@ -40,14 +40,11 @@ fun SwipeDeleteContainer(
             if (value == SwipeToDismissBoxValue.StartToEnd) {
                 if (descendantCount > 0) {
                     confirmDelete = true
-                    false
                 } else {
                     onDelete()
-                    true
                 }
-            } else {
-                false
             }
+            false
         }
     )
 
