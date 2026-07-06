@@ -85,7 +85,13 @@ fun InlineTaskTitle(
                 singleLine = true,
                 textStyle = style,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier.focusRequester(focusRequester),
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .pointerInput(onDoubleTap) {
+                        detectTapGestures(
+                            onDoubleTap = { onDoubleTap() }
+                        )
+                    },
                 decorationBox = { innerTextField ->
                     if (fieldValue.text.isBlank()) {
                         Text(
