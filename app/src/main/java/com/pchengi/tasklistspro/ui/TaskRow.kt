@@ -48,13 +48,7 @@ fun TaskRow(
     val revealAdd = { showAddButton = true }
 
     SwipeDeleteContainer(
-        onDeleteRequested = {
-            if (hasChildren) {
-                showDeleteConfirmation = true
-            } else {
-                viewModel.deleteTask(task.id)
-            }
-        },
+        onDeleteRequested = { showDeleteConfirmation = true },
         modifier = modifier
     ) {
         Row(
@@ -129,15 +123,19 @@ fun TaskRow(
     }
 
     if (showDeleteConfirmation) {
-        val affectedDescendants = descendantCount.coerceAtLeast(1)
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
             title = { Text("Delete task?") },
             text = {
-                Text(
-                    "Delete this task and $affectedDescendants subtask" +
-                        if (affectedDescendants == 1) "?" else "s?"
-                )
+                if (hasChildren) {
+                    val affectedDescendants = descendantCount.coerceAtLeast(1)
+                    Text(
+                        "Delete this task and $affectedDescendants subtask" +
+                            if (affectedDescendants == 1) "?" else "s?"
+                    )
+                } else {
+                    Text("Delete this task?")
+                }
             },
             confirmButton = {
                 TextButton(
