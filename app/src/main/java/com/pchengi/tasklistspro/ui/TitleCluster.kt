@@ -1,7 +1,8 @@
 package com.pchengi.tasklistspro.ui
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -40,6 +41,7 @@ fun TitleCluster(
         modifier = modifier,
         trailingContent = {
             if (hasChildren) {
+                Spacer(modifier = Modifier.width(4.dp))
                 IconButton(
                     onClick = onToggleExpanded,
                     modifier = Modifier.size(24.dp)
@@ -55,8 +57,7 @@ fun TitleCluster(
                     Text(
                         text = "($uncheckedDescendantCount)",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(start = 1.dp)
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }

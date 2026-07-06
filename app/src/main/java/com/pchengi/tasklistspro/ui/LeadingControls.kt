@@ -1,5 +1,6 @@
 package com.pchengi.tasklistspro.ui
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Checkbox
@@ -13,7 +14,7 @@ fun LeadingControls(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    androidx.compose.foundation.layout.Row(modifier = modifier) {
+    Row(modifier = modifier) {
         TaskDragHandle(
             modifier = Modifier.padding(start = 2.dp, end = 3.dp)
         )

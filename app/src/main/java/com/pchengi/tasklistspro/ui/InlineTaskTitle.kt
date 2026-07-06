@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -36,6 +37,7 @@ fun InlineTaskTitle(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    var isEditing by remember { mutableStateOf(false) }
     var fieldValue by remember(title) {
         mutableStateOf(
             TextFieldValue(
@@ -46,7 +48,7 @@ fun InlineTaskTitle(
     }
 
     LaunchedEffect(title) {
-        if (title != fieldValue.text) {
+        if (!isEditing && title != fieldValue.text) {
             fieldValue = TextFieldValue(
                 text = title,
                 selection = TextRange(title.length)
@@ -56,7 +58,11 @@ fun InlineTaskTitle(
 
     LaunchedEffect(requestFocus) {
         if (requestFocus) {
-            fieldValue = fieldValue.copy(selection = TextRange(fieldValue.text.length))
+            isEditing = true
+            fieldValue = TextFieldValue(
+                text = title,
+                selection = TextRange(title.length)
+            )
             focusRequester.requestFocus()
             keyboardController?.show()
             onFocusHandled()
@@ -64,37 +70,71 @@ fun InlineTaskTitle(
     }
 
     Row(
-        modifier = modifier.pointerInput(onTap, onDoubleTap) {
-            detectTapGestures(
-                onTap = { onTap() },
-                onDoubleTap = { onDoubleTap() }
-            )
-        },
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BasicTextField(
-            value = fieldValue,
-            onValueChange = { newValue ->
-                fieldValue = newValue
-                if (newValue.text != title) {
-                    onTitleChange(newValue.text)
+        if (isEditing) {
+            BasicTextField(
+                value = fieldValue,
+                onValueChange = { newValue ->
+                    fieldValue = newValue
+                    if (newValue.text != title) {
+                        onTitleChange(newValue.text)
+                    }
+                },
+                singleLine = true,
+                textStyle = style,
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            isEditing = false
+                        }
+                    },
+                decorationBox = { innerTextField ->
+                    if (fieldValue.text.isBlank()) {
+                        Text(
+                            text = "Task",
+                            style = style.copy(color = MaterialTheme.colorScheme.outline)
+                        )
+                    }
+                    innerTextField()
                 }
-            },
-            singleLine = true,
-            textStyle = style,
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier.focusRequester(focusRequester),
-            decorationBox = { innerTextField ->
-                if (fieldValue.text.isBlank()) {
-                    Text(
-                        text = "Task",
-                        style = style.copy(color = MaterialTheme.colorScheme.outline)
+            )
+        } else {
+            Text(
+                text = title.ifBlank { "Task" },
+                style = if (title.isBlank()) {
+                    style.copy(color = MaterialTheme.colorScheme.outline)
+                } else {
+                    style
+                },
+                modifier = Modifier.pointerInput(title, onTap, onDoubleTap) {
+                    detectTapGestures(
+                        onTap = {
+                            onTap()
+                            isEditing = true
+                        },
+                        onDoubleTap = {
+                            onDoubleTap()
+                        }
                     )
                 }
-                innerTextField()
-            }
-        )
+            )
+        }
 
         trailingContent()
+    }
+
+    LaunchedEffect(isEditing) {
+        if (isEditing) {
+            fieldValue = TextFieldValue(
+                text = title,
+                selection = TextRange(title.length)
+            )
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
     }
 }
