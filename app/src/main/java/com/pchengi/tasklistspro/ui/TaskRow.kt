@@ -1,6 +1,7 @@
 package com.pchengi.tasklistspro.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,9 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +54,7 @@ fun TaskRow(
     val descendantCount = node.descendantCount()
     val uncheckedDescendantCount = node.uncheckedDescendantCount()
     var confirmDelete by remember(task.id) { mutableStateOf(false) }
+    var showAddButton by remember(task.id) { mutableStateOf(false) }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -95,6 +97,8 @@ fun TaskRow(
             node = node,
             focusedTaskId = focusedTaskId,
             uncheckedDescendantCount = uncheckedDescendantCount,
+            showAddButton = showAddButton,
+            onRevealAdd = { showAddButton = true },
             viewModel = viewModel
         )
     }
@@ -117,6 +121,8 @@ private fun TaskRowContents(
     node: TaskNode,
     focusedTaskId: Long?,
     uncheckedDescendantCount: Int,
+    showAddButton: Boolean,
+    onRevealAdd: () -> Unit,
     viewModel: TaskViewModel
 ) {
     val task = node.task
@@ -130,6 +136,7 @@ private fun TaskRowContents(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
+            .clickable(onClick = onRevealAdd)
             .padding(
                 start = (node.depth * INDENT_DP).dp,
                 end = 6.dp,
@@ -165,6 +172,7 @@ private fun TaskRowContents(
             )
 
             if (hasChildren) {
+                Spacer(modifier = Modifier.width(16.dp))
                 IconButton(
                     onClick = { viewModel.toggleExpanded(task.id) },
                     modifier = Modifier.size(26.dp)
@@ -185,9 +193,9 @@ private fun TaskRowContents(
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
+        if (showAddButton) {
             FilledTonalIconButton(
                 onClick = { viewModel.addTask(task.id) },
                 modifier = Modifier.size(30.dp)
@@ -198,6 +206,8 @@ private fun TaskRowContents(
                     modifier = Modifier.size(18.dp)
                 )
             }
+        } else {
+            Spacer(modifier = Modifier.size(30.dp))
         }
     }
 }
