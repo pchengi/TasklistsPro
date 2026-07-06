@@ -36,7 +36,7 @@ fun InlineTaskTitle(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    var fieldValue by remember {
+    var fieldValue by remember(title) {
         mutableStateOf(
             TextFieldValue(
                 text = title,
