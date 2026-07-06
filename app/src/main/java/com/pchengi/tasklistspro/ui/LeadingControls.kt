@@ -12,10 +12,14 @@ import androidx.compose.ui.unit.dp
 fun LeadingControls(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
         TaskDragHandle(
+            onMoveUp = onMoveUp,
+            onMoveDown = onMoveDown,
             modifier = Modifier.padding(start = 2.dp, end = 3.dp)
         )
 
