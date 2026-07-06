@@ -94,7 +94,9 @@ fun TaskRow(
                 checked = task.completed,
                 onCheckedChange = { checked -> viewModel.toggleCompleted(task.id, checked) },
                 onMoveUp = { viewModel.moveUp(task.id) },
-                onMoveDown = { viewModel.moveDown(task.id) }
+                onMoveDown = { viewModel.moveDown(task.id) },
+                onIndent = { viewModel.indentUnder(task.id, previousVisibleNode?.task?.id) },
+                onOutdent = { viewModel.outdent(task.id) }
             )
 
             TitleCluster(
