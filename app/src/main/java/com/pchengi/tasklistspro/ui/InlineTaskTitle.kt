@@ -38,6 +38,7 @@ fun InlineTaskTitle(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     var isEditing by remember { mutableStateOf(false) }
+    var shouldRequestFocus by remember { mutableStateOf(false) }
     var fieldValue by remember(title) {
         mutableStateOf(
             TextFieldValue(
@@ -58,13 +59,12 @@ fun InlineTaskTitle(
 
     LaunchedEffect(requestFocus) {
         if (requestFocus) {
-            isEditing = true
             fieldValue = TextFieldValue(
                 text = title,
                 selection = TextRange(title.length)
             )
-            focusRequester.requestFocus()
-            keyboardController?.show()
+            isEditing = true
+            shouldRequestFocus = true
             onFocusHandled()
         }
     }
@@ -114,7 +114,12 @@ fun InlineTaskTitle(
                     detectTapGestures(
                         onTap = {
                             onTap()
+                            fieldValue = TextFieldValue(
+                                text = title,
+                                selection = TextRange(title.length)
+                            )
                             isEditing = true
+                            shouldRequestFocus = true
                         },
                         onDoubleTap = {
                             onDoubleTap()
@@ -127,14 +132,11 @@ fun InlineTaskTitle(
         trailingContent()
     }
 
-    LaunchedEffect(isEditing) {
-        if (isEditing) {
-            fieldValue = TextFieldValue(
-                text = title,
-                selection = TextRange(title.length)
-            )
+    LaunchedEffect(isEditing, shouldRequestFocus) {
+        if (isEditing && shouldRequestFocus) {
             focusRequester.requestFocus()
             keyboardController?.show()
+            shouldRequestFocus = false
         }
     }
 }
