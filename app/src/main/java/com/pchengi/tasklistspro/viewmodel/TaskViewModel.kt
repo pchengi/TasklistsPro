@@ -73,4 +73,27 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     fun outdent(id: Long) {
         viewModelScope.launch { repository.outdent(id) }
     }
+
+    fun exportXml(
+        onSuccess: (String) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        viewModelScope.launch {
+            runCatching { repository.exportXml() }
+                .onSuccess(onSuccess)
+                .onFailure(onError)
+        }
+    }
+
+    fun importXml(
+        xml: String,
+        onSuccess: () -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        viewModelScope.launch {
+            runCatching { repository.importXml(xml) }
+                .onSuccess { onSuccess() }
+                .onFailure(onError)
+        }
+    }
 }

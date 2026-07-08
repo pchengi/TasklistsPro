@@ -1,8 +1,12 @@
 package com.pchengi.tasklistspro.repository
 
+import android.util.Xml
 import com.pchengi.tasklistspro.data.TaskDao
 import com.pchengi.tasklistspro.data.TaskEntity
+import java.io.StringReader
+import java.io.StringWriter
 import kotlinx.coroutines.flow.Flow
+import org.xmlpull.v1.XmlPullParser
 
 private const val MAX_SUBTASK_DEPTH = 3
 
@@ -137,6 +141,88 @@ class TaskRepository(private val dao: TaskDao) {
         syncAncestors(oldParentId)
         syncAncestors(parent.parentId)
     }
+
+    suspend fun exportXml(): String {
+        val tasks = dao.getAllTasks()
+            .sortedWith(compareBy<TaskEntity> { it.parentId ?: Long.MIN_VALUE }.thenBy { it.sortOrder }.thenBy { it.id })
+
+        val writer = StringWriter()
+        val serializer = Xml.newSerializer()
+        serializer.setOutput(writer)
+        serializer.startDocument("UTF-8", true)
+        serializer.startTag(null, "tasklistspro")
+        serializer.attribute(null, "version", "1")
+
+        tasks.forEach { task ->
+            serializer.startTag(null, "task")
+            serializer.attribute(null, "id", task.id.toString())
+            task.parentId?.let { serializer.attribute(null, "parentId", it.toString()) }
+            serializer.attribute(null, "title", task.title)
+            serializer.attribute(null, "completed", task.completed.toString())
+            serializer.attribute(null, "bold", task.bold.toString())
+            serializer.attribute(null, "expanded", task.expanded.toString())
+            serializer.attribute(null, "sortOrder", task.sortOrder.toString())
+            serializer.attribute(null, "createdAt", task.createdAt.toString())
+            serializer.attribute(null, "updatedAt", task.updatedAt.toString())
+            serializer.endTag(null, "task")
+        }
+
+        serializer.endTag(null, "tasklistspro")
+        serializer.endDocument()
+        return writer.toString()
+    }
+
+    suspend fun importXml(xml: String) {
+        val parser = Xml.newPullParser()
+        parser.setInput(StringReader(xml))
+
+        val importedTasks = mutableListOf<TaskEntity>()
+        var eventType = parser.eventType
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            if (eventType == XmlPullParser.START_TAG && parser.name == "task") {
+                importedTasks += parser.readTaskEntity()
+            }
+            eventType = parser.next()
+        }
+
+        val importedIds = importedTasks.map { it.id }.toSet()
+        require(importedTasks.isNotEmpty()) { "No tasks found in XML file." }
+        require(importedTasks.all { it.id > 0 }) { "Imported tasks must have positive IDs." }
+        require(importedTasks.distinctBy { it.id }.size == importedTasks.size) { "Duplicate task IDs in XML file." }
+        require(importedTasks.all { task -> task.parentId == null || task.parentId in importedIds }) {
+            "XML file contains tasks with missing parents."
+        }
+
+        dao.replaceAll(importedTasks)
+    }
+
+    private fun XmlPullParser.readTaskEntity(): TaskEntity {
+        val id = requiredLong("id")
+        return TaskEntity(
+            id = id,
+            parentId = optionalLong("parentId"),
+            title = getAttributeValue(null, "title").orEmpty(),
+            completed = optionalBoolean("completed", default = false),
+            bold = optionalBoolean("bold", default = false),
+            expanded = optionalBoolean("expanded", default = true),
+            sortOrder = optionalInt("sortOrder", default = 0),
+            createdAt = optionalLong("createdAt") ?: System.currentTimeMillis(),
+            updatedAt = optionalLong("updatedAt") ?: System.currentTimeMillis()
+        )
+    }
+
+    private fun XmlPullParser.requiredLong(attributeName: String): Long =
+        getAttributeValue(null, attributeName)?.toLongOrNull()
+            ?: error("Missing or invalid '$attributeName' attribute.")
+
+    private fun XmlPullParser.optionalLong(attributeName: String): Long? =
+        getAttributeValue(null, attributeName)?.takeIf { it.isNotBlank() }?.toLongOrNull()
+
+    private fun XmlPullParser.optionalInt(attributeName: String, default: Int): Int =
+        getAttributeValue(null, attributeName)?.toIntOrNull() ?: default
+
+    private fun XmlPullParser.optionalBoolean(attributeName: String, default: Boolean): Boolean =
+        getAttributeValue(null, attributeName)?.toBooleanStrictOrNull() ?: default
 
     private suspend fun syncAncestors(startParentId: Long?) {
         var parentId = startParentId
