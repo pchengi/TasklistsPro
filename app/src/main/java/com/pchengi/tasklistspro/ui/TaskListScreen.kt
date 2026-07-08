@@ -4,15 +4,22 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Share
@@ -21,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,7 +39,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -43,14 +53,32 @@ import java.time.format.DateTimeFormatter
 
 private const val FILE_PROVIDER_AUTHORITY = "com.pchengi.tasklistspro.fileprovider"
 
+private val LightBackgroundOptions = listOf(
+    "White" to Color(0xFFFFFFFF),
+    "Warm cream" to Color(0xFFFFF8E1),
+    "Soft yellow" to Color(0xFFFFFDE7),
+    "Pale green" to Color(0xFFE8F5E9),
+    "Pale blue" to Color(0xFFE3F2FD),
+    "Pale lavender" to Color(0xFFF3E5F5),
+    "Soft pink" to Color(0xFFFCE4EC),
+    "Light grey" to Color(0xFFF5F5F5)
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskListScreen(viewModel: TaskViewModel) {
+fun TaskListScreen(
+    viewModel: TaskViewModel,
+    darkMode: Boolean,
+    lightBackgroundColor: Color,
+    onToggleDarkMode: () -> Unit,
+    onLightBackgroundSelected: (Color) -> Unit
+) {
     val context = LocalContext.current
     val tree by viewModel.taskTree.collectAsState()
     val focusedTaskId by viewModel.focusTaskId.collectAsState()
     val visibleTasks = tree.flattenVisible()
     var showDeleteAllConfirmation by remember { mutableStateOf(false) }
+    var showBackgroundPicker by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/xml")
@@ -116,10 +144,22 @@ fun TaskListScreen(viewModel: TaskViewModel) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Tasklists Pro") },
                 actions = {
+                    IconButton(onClick = onToggleDarkMode) {
+                        Icon(
+                            imageVector = if (darkMode) Icons.Rounded.LightMode else Icons.Rounded.DarkMode,
+                            contentDescription = if (darkMode) "Switch to bright mode" else "Switch to dark mode"
+                        )
+                    }
+                    if (!darkMode) {
+                        IconButton(onClick = { showBackgroundPicker = true }) {
+                            Icon(Icons.Rounded.Palette, contentDescription = "Choose background color")
+                        }
+                    }
                     IconButton(onClick = { importLauncher.launch(arrayOf("text/xml", "application/xml", "*/*")) }) {
                         Icon(Icons.Rounded.Restore, contentDescription = "Restore XML")
                     }
@@ -213,6 +253,17 @@ fun TaskListScreen(viewModel: TaskViewModel) {
         }
     }
 
+    if (showBackgroundPicker) {
+        BackgroundPickerDialog(
+            selectedColor = lightBackgroundColor,
+            onSelectColor = { color ->
+                onLightBackgroundSelected(color)
+                showBackgroundPicker = false
+            },
+            onDismiss = { showBackgroundPicker = false }
+        )
+    }
+
     if (showDeleteAllConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteAllConfirmation = false },
@@ -255,6 +306,45 @@ fun TaskListScreen(viewModel: TaskViewModel) {
             }
         )
     }
+}
+
+@Composable
+private fun BackgroundPickerDialog(
+    selectedColor: Color,
+    onSelectColor: (Color) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Choose bright mode background") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LightBackgroundOptions.forEach { (label, color) ->
+                    TextButton(onClick = { onSelectColor(color) }) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .background(color)
+                            )
+                            Text(
+                                text = if (color == selectedColor) "$label ✓" else label
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 private fun defaultBackupFileName(): String {
