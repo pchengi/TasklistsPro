@@ -63,6 +63,10 @@ class TaskRepository(private val dao: TaskDao) {
         dao.deleteIds(ids)
     }
 
+    suspend fun deleteAll() {
+        dao.deleteAll()
+    }
+
     suspend fun moveUp(id: Long) {
         val all = dao.getAllTasks()
         val task = all.firstOrNull { it.id == id } ?: return

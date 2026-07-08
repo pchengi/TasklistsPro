@@ -58,6 +58,19 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.deleteTask(id) }
     }
 
+    fun deleteAll(
+        onSuccess: () -> Unit = {},
+        onError: (Throwable) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                repository.deleteAll()
+            }.onSuccess {
+                onSuccess()
+            }.onFailure(onError)
+        }
+    }
+
     fun moveUp(id: Long) {
         viewModelScope.launch { repository.moveUp(id) }
     }
@@ -79,8 +92,9 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         onError: (Throwable) -> Unit
     ) {
         viewModelScope.launch {
-            runCatching { repository.exportXml() }
-                .onSuccess(onSuccess)
+            runCatching {
+                repository.exportXml()
+            }.onSuccess(onSuccess)
                 .onFailure(onError)
         }
     }
@@ -91,9 +105,11 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         onError: (Throwable) -> Unit
     ) {
         viewModelScope.launch {
-            runCatching { repository.importXml(xml) }
-                .onSuccess { onSuccess() }
-                .onFailure(onError)
+            runCatching {
+                repository.importXml(xml)
+            }.onSuccess {
+                onSuccess()
+            }.onFailure(onError)
         }
     }
 }
