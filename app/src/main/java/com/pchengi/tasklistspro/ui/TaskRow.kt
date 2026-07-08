@@ -28,6 +28,7 @@ import com.pchengi.tasklistspro.viewmodel.TaskViewModel
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val INDENT_DP = 16
+private const val MAX_SUBTASK_DEPTH = 3
 
 @Composable
 fun TaskRow(
@@ -41,11 +42,16 @@ fun TaskRow(
     val hasChildren = node.children.isNotEmpty()
     val descendantCount = node.descendantCount()
     val uncheckedDescendantCount = node.uncheckedDescendantCount()
+    val canAddSubtask = node.depth < MAX_SUBTASK_DEPTH
     val viewConfiguration = LocalViewConfiguration.current
     var showAddButton by remember(task.id) { mutableStateOf(false) }
     var showDeleteConfirmation by remember(task.id) { mutableStateOf(false) }
 
-    val revealAdd = { showAddButton = true }
+    val revealAdd = {
+        if (canAddSubtask) {
+            showAddButton = true
+        }
+    }
 
     SwipeDeleteContainer(
         onDeleteRequested = { showDeleteConfirmation = true },
@@ -55,7 +61,7 @@ fun TaskRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
-                .pointerInput(task.id) {
+                .pointerInput(task.id, canAddSubtask) {
                     awaitPointerEventScope {
                         while (true) {
                             awaitFirstDown(
@@ -120,8 +126,12 @@ fun TaskRow(
             Spacer(modifier = Modifier.weight(1f))
 
             TrailingControls(
-                showAddButton = showAddButton,
-                onAddSubtask = { viewModel.addTask(task.id) }
+                showAddButton = showAddButton && canAddSubtask,
+                onAddSubtask = {
+                    if (canAddSubtask) {
+                        viewModel.addTask(task.id)
+                    }
+                }
             )
         }
     }
